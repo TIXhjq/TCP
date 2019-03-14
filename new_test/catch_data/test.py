@@ -36,8 +36,8 @@ type__aim = 'cbr'
 n = 40
 step=50#切分步长
 by_col=time_#切分依据的列名
-is_iter=False,
-chunk_size=0
+is_iter=True,
+chunk_size=5000
 
 def train(is_path=None,fitter_data=None,routing_data=None):
 

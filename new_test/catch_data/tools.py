@@ -322,7 +322,7 @@ class tools(object):
         data.drop(columns=remove_col,inplace=True)
         return data
 
-    def un_init_data_to_form(self,read_path_fitter=None,read_path_routing=None,fitter_data=None,routing_data=None,is_path=True,is_iter=False,chunk_size=0):
+    def un_init_data_to_form(self,read_path_fitter=None,read_path_routing=None,fitter_data=None,routing_data=None,is_path=True,is_iter=False,chunk_size=0,is_init_data=False):
         '''
         :is_iter:是否迭代读入
         :chunk_size:每次迭代的大小
@@ -337,8 +337,8 @@ class tools(object):
                 routing_data=pd.read_csv(read_path_routing)
         if is_path:
             if is_iter:
-                routing_data=self.iterm_read_data(read_path_routing,is_iter,chunk_size)
-                fitter_data=self.iterm_read_data(read_path_fitter,is_iter,chunk_size)
+                routing_data=self.iterm_read_data(read_path_routing,is_iter,chunk_size,is_init_data=is_init_data)
+                fitter_data=self.iterm_read_data(read_path_fitter,is_iter,chunk_size,is_init_data=is_init_data)
 
         type_=fitter_data['judge_start'].unique().tolist()
         test = fitter_data.groupby(['judge_start'])
@@ -354,7 +354,17 @@ class tools(object):
 
         return start_data,end_data,fitter_data,sends,routing_packet
 
-    def iterm_read_data(self,read_path,is_iterator=True,chunk_size=5000):
+    def online_choose_cols(self,data,use_cols,is_set_cols):
+        l = len(data.columns.tolist())
+        data.drop(columns=[4], inplace=True)
+        cols = range(1, l)
+        cols = [str(x) for x in cols]
+        data.columns = cols
+        if is_set_cols:
+            data = data[use_cols]
+        return data
+
+    def iterm_read_data(self,read_path,is_iterator=True,chunk_size=5000,use_cols=None,is_set_cols=None,is_init_data=True):
         data = pd.read_table(read_path, header=None, iterator=is_iterator)
 
         loop = True
@@ -369,6 +379,8 @@ class tools(object):
                 chunk = chunk.values.tolist()
                 chunk = self.formal_change(chunk)
                 chunk = DataFrame(data=chunk)
+                if is_init_data:
+                    chunk=self.online_choose_cols(chunk,use_cols,is_set_cols)
                 chunks.append(chunk)
                 print("read data {} end".format(count))
                 print('---------------------------------')
@@ -387,7 +399,7 @@ class tools(object):
 
         return data
 
-    def tranform_data(self,read_path,use_cols=None,is_set_cols=False,chunk_size=5000,is_iterator=True):
+    def tranform_data(self,read_path,use_cols=None,is_set_cols=False,chunk_size=5000,is_iterator=True,is_init_data=True):
         '''
         :param read_path: 原始数据地址
         :return: 适合的数据
@@ -400,19 +412,22 @@ class tools(object):
             data = data.values.tolist()
             data = self.formal_change(data)
             data = DataFrame(data=data)
+            l = len(data.columns.tolist())
+            data.drop(columns=[4], inplace=True)
+            cols = range(1, l)
+            cols = [str(x) for x in cols]
+            data.columns = cols
+            if is_set_cols:
+                data = data[use_cols]
         if is_iterator:
             data=self.iterm_read_data(
                 read_path=read_path,
                 is_iterator=is_iterator,
-                chunk_size=chunk_size
+                chunk_size=chunk_size,
+                is_set_cols=is_set_cols,
+                use_cols=use_cols,
+                is_init_data=is_init_data,
             )
-        l = len(data.columns.tolist())
-        data.drop(columns=[4], inplace=True)
-        cols=range(1,l)
-        cols = [ str(x) for x in cols ]
-        data.columns=cols
-        if is_set_cols:
-            data=data[use_cols]
 
         print('read data later:{}'.format(time.time()-start_time))
         print('---------------------')

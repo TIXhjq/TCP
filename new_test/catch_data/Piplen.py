@@ -117,7 +117,7 @@ class Pipline(object):
         #-------------------------------------------------------------------------------------------------------------------
         #read data
         if is_initial_data:
-            data = self.tool.tranform_data(read_path,use_cols=use_cols,is_set_cols=is_set_cols,is_iterator=is_iter,chunk_size=chunk_size)
+            data = self.tool.tranform_data(read_path,use_cols=use_cols,is_set_cols=is_set_cols,is_iterator=is_iter,chunk_size=chunk_size,is_init_data=is_initial_data)
             print('begin data format processing')
             print('loading.....')
             start_time=time.time()
@@ -127,7 +127,7 @@ class Pipline(object):
             print("data format processing later:{}".format(time.time()-start_time))
 
         else:
-            data1, data2, new_data,sends,routing_packets = self.tool.un_init_data_to_form(read_path_fitter=read_path_fitter,read_path_routing=read_path_routing, fitter_data=fitter_data,routing_data=routing_data, is_path=is_path,is_iter=is_iter,chunk_size=chunk_size)
+            data1, data2, new_data,sends,routing_packets = self.tool.un_init_data_to_form(read_path_fitter=read_path_fitter,read_path_routing=read_path_routing, fitter_data=fitter_data,routing_data=routing_data, is_path=is_path,is_iter=is_iter,chunk_size=chunk_size,is_init_data=is_initial_data)
             remove_packetID_list,data2 = self.tool.find_drop_id(data1, data2, packet_id)
             self.tool.remove_delay_id(data1, remove_packetID_list, packet_id)
         #-------------------------------------------------------------------------------------------------------------------
@@ -182,7 +182,7 @@ class Pipline(object):
 
 if __name__=='__main__':
     #e.g
-    read_path='.//data//test.tr'
+    read_path='.//data//AODV_tcp.tr'
     save_path='.//data//test'
 
     pipline=Pipline()
@@ -208,7 +208,7 @@ if __name__=='__main__':
     trace_aim = 'AGT'
 
     type_ = '7'
-    type__aim ='cbr'
+    type__aim ='tcp'
 
     node_id='3'
 
