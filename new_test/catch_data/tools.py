@@ -322,16 +322,23 @@ class tools(object):
         data.drop(columns=remove_col,inplace=True)
         return data
 
-    def un_init_data_to_form(self,read_path_fitter=None,read_path_routing=None,fitter_data=None,routing_data=None,is_path=True):
+    def un_init_data_to_form(self,read_path_fitter=None,read_path_routing=None,fitter_data=None,routing_data=None,is_path=True,is_iter=False,chunk_size=0):
         '''
+        :is_iter:是否迭代读入
+        :chunk_size:每次迭代的大小
         :param data:数据
         :param read_path: 非原始数据的地址
         :param is_path:是否为地址形式传入 default:True
         :return: 开始时间数据，结束时间数据，完整数据，发送数
         '''
-        if(is_path):
-            fitter_data=pd.read_csv(read_path_fitter)
-            routing_data=pd.read_csv(read_path_routing)
+        if is_path:
+            if is_iter:
+                fitter_data=pd.read_csv(read_path_fitter)
+                routing_data=pd.read_csv(read_path_routing)
+        if is_path:
+            if is_iter:
+                routing_data=self.iterm_read_data(read_path_routing,is_iter,chunk_size)
+                fitter_data=self.iterm_read_data(read_path_fitter,is_iter,chunk_size)
 
         type_=fitter_data['judge_start'].unique().tolist()
         test = fitter_data.groupby(['judge_start'])
@@ -347,7 +354,40 @@ class tools(object):
 
         return start_data,end_data,fitter_data,sends,routing_packet
 
-    def tranform_data(self,read_path,use_cols=None,is_set_cols=False):
+    def iterm_read_data(self,read_path,is_iterator=True,chunk_size=5000):
+        data = pd.read_table(read_path, header=None, iterator=is_iterator)
+
+        loop = True
+        chunkSize = chunk_size
+        chunks = []
+        count = 1
+        while loop:
+            try:
+                print("read data {}".format(count))
+                print("loading...")
+                chunk = data.get_chunk(chunkSize)
+                chunk = chunk.values.tolist()
+                chunk = self.formal_change(chunk)
+                chunk = DataFrame(data=chunk)
+                chunks.append(chunk)
+                print("read data {} end".format(count))
+                print('---------------------------------')
+                count += 1
+            except StopIteration:
+                loop = False
+
+        print('Iteration is stopped')
+        print('concat')
+        new_data = pd.concat(chunks, ignore_index=True)
+        del chunks, data
+        gc.collect()
+
+        print('end_cat')
+        data = DataFrame(data=new_data)
+
+        return data
+
+    def tranform_data(self,read_path,use_cols=None,is_set_cols=False,chunk_size=5000,is_iterator=True):
         '''
         :param read_path: 原始数据地址
         :return: 适合的数据
@@ -355,38 +395,17 @@ class tools(object):
         print('read data')
         print('loading....')
         start_time=time.time()
-
-        data = pd.read_table(read_path, header=None,iterator=True)
-        loop=True
-        chunkSize=5000
-        chunks=[]
-        count=1
-        while loop:
-            try:
-                print("read data {}".format(count))
-                print("loading...")
-                chunk=data.get_chunk(chunkSize)
-                chunk = chunk.values.tolist()
-                chunk = self.formal_change(chunk)
-                chunk=DataFrame(data=chunk)
-                chunks.append(chunk)
-                print("read data {} end".format(count))
-                print('---------------------------------')
-                count+=1
-            except StopIteration:
-                loop=False
-
-        print('Iteration is stopped')
-        print('concat')
-        new_data=pd.concat(chunks,ignore_index=True)
-
-
-        del chunks,data
-        gc.collect()
-
-        print('end_cat')
-
-        data = DataFrame(data=new_data)
+        if not is_iterator:
+            data = pd.read_table(read_path, header=None, iterator=is_iterator)
+            data = data.values.tolist()
+            data = self.formal_change(data)
+            data = DataFrame(data=data)
+        if is_iterator:
+            data=self.iterm_read_data(
+                read_path=read_path,
+                is_iterator=is_iterator,
+                chunk_size=chunk_size
+            )
         l = len(data.columns.tolist())
         data.drop(columns=[4], inplace=True)
         cols=range(1,l)

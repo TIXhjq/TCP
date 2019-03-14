@@ -24,23 +24,23 @@ action = '1'
 energy = '14'
 action_aim1 = 's'
 action_aim2 = 'r'
-
 time_ = '2'
 packet_id = '6'
-
 trace = '4'
 trace_aim = 'AGT'
-
 node_id='3'
-
 type_ = '7'
-type__aim = 'tcp'
-step=50
+
+initialenergy = 10000
+type__aim = 'cbr'
+n = 40
+step=50#切分步长
+by_col=time_#切分依据的列名
+is_iter=False,
+chunk_size=0
 
 def train(is_path=None,fitter_data=None,routing_data=None):
 
-    n = 40
-    initialenergy = 10000
 
     pipline = Pipline()
     # train
@@ -67,6 +67,8 @@ def train(is_path=None,fitter_data=None,routing_data=None):
             routing_data=routing_data,
             packet_id=packet_id,
             node_id=node_id,
+            is_iter=is_iter,
+            chunk_size=chunk_size,
         )
     return pipline.result,pipline.result_cols
 
@@ -74,8 +76,8 @@ tool=tools()
 data=pd.read_csv('.//data//test_3.csv ')
 data2=pd.read_csv('.//data//test_routing_packet.csv')
 
-fit_data=tool.split_data_step(data,step=step,by_col=time_,is_by_col=True)
-pack_data=tool.split_data_step(data2,step=step,by_col=time_,is_by_col=True)
+fit_data=tool.split_data_step(data,step=step,by_col=by_col,is_by_col=True)
+pack_data=tool.split_data_step(data2,step=step,by_col=by_col,is_by_col=True)
 
 all_result=[]
 cols_=0

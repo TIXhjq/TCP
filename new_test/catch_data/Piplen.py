@@ -99,7 +99,7 @@ class Pipline(object):
         energy_data = self.tool.data_to_array(energy_data)
 
         return energy_data
-    def fit(self,packet_id,save_path,energy,n,initialenergy,action, trace, type_,action_aim1, action_aim2,trace_aim, type__aim,node_id,time_,read_path=None,read_path_fitter=None,read_path_routing=None,fitter_data=None,routing_data=None,is_initial_data=True,use_cols=None,verbosity=False,is_path=True,is_set_cols=None):
+    def fit(self,packet_id,save_path,energy,n,initialenergy,action, trace, type_,action_aim1, action_aim2,trace_aim, type__aim,node_id,time_,read_path=None,read_path_fitter=None,read_path_routing=None,fitter_data=None,routing_data=None,is_initial_data=True,use_cols=None,verbosity=False,is_path=True,is_set_cols=None,is_iter=True,chunk_size=5000):
         '''
         :param data:数据
         :param action_aim1: 筛选得目标
@@ -108,6 +108,8 @@ class Pipline(object):
         :param type__aim: 筛选得目标
         :param path:文件路径
         :is_init_path:是否是原始文档 default:True
+        :chunk_size :每次迭代的大小
+        :is_item:是否迭代
         :data:在false的情况下可以直接传入数据
         :verbosity: 控制是否输出中间过程
         '''
@@ -115,7 +117,7 @@ class Pipline(object):
         #-------------------------------------------------------------------------------------------------------------------
         #read data
         if is_initial_data:
-            data = self.tool.tranform_data(read_path,use_cols=use_cols,is_set_cols=is_set_cols)
+            data = self.tool.tranform_data(read_path,use_cols=use_cols,is_set_cols=is_set_cols,is_iterator=is_iter,chunk_size=chunk_size)
             print('begin data format processing')
             print('loading.....')
             start_time=time.time()
@@ -125,7 +127,7 @@ class Pipline(object):
             print("data format processing later:{}".format(time.time()-start_time))
 
         else:
-            data1, data2, new_data,sends,routing_packets = self.tool.un_init_data_to_form(read_path_fitter=read_path_fitter,read_path_routing=read_path_routing, fitter_data=fitter_data,routing_data=routing_data, is_path=is_path)
+            data1, data2, new_data,sends,routing_packets = self.tool.un_init_data_to_form(read_path_fitter=read_path_fitter,read_path_routing=read_path_routing, fitter_data=fitter_data,routing_data=routing_data, is_path=is_path,is_iter=is_iter,chunk_size=chunk_size)
             remove_packetID_list,data2 = self.tool.find_drop_id(data1, data2, packet_id)
             self.tool.remove_delay_id(data1, remove_packetID_list, packet_id)
         #-------------------------------------------------------------------------------------------------------------------
@@ -180,7 +182,7 @@ class Pipline(object):
 
 if __name__=='__main__':
     #e.g
-    read_path='.//data//AODV_tcp.tr'
+    read_path='.//data//test.tr'
     save_path='.//data//test'
 
     pipline=Pipline()
@@ -188,6 +190,11 @@ if __name__=='__main__':
 
     energy = '14'
     initialenergy = 10000
+
+    is_iter=True
+    #是否启用迭代
+    chunk_size=5000
+
 
     #param
     action = '1'
@@ -201,7 +208,7 @@ if __name__=='__main__':
     trace_aim = 'AGT'
 
     type_ = '7'
-    type__aim ='tcp'
+    type__aim ='cbr'
 
     node_id='3'
 
@@ -228,6 +235,8 @@ if __name__=='__main__':
         node_id=node_id,
         use_cols=use_cols,
         is_set_cols=True,
+        chunk_size=chunk_size,
+        is_iter=is_iter,
     )
     print(pipline.result_DataFrame)
     pipline.result_DataFrame.to_csv('.//data//basic//first_all_result.csv',index=None)
